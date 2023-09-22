@@ -1,0 +1,19 @@
+build
+.dart_tool
+.vscode
+#android
+.flutter-plugins-dependencies
+.flutter-plugins
+#ios
+
+.DS_Store
+pubspec.lock
+linux
+macos
+windows
+web
+android/app/google-services.json
+
+# IntelliJ related
+*.iml
+.idea
