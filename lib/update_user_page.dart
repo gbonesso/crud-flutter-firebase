@@ -5,20 +5,35 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'user.dart';
 
-class UserPage extends StatefulWidget {
+class UpdateUserPage extends StatefulWidget {
+  final User? user;
+
+  const UpdateUserPage({super.key, this.user});
+
   @override
-  State<UserPage> createState() => _UserPageState();
+  State<UpdateUserPage> createState() => _UpdateUserPageState();
 }
 
-class _UserPageState extends State<UserPage> {
-  final controllerName = TextEditingController();
-  final controllerAge = TextEditingController();
-  final controllerDate = TextEditingController();
+class _UpdateUserPageState extends State<UpdateUserPage> {
+  late final controllerName;
+  late final controllerAge;
+  late final controllerDate;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    final dateFormat = DateFormat('dd/MM/yyyy');
+    controllerName = TextEditingController(text: widget.user!.name);
+    controllerAge = TextEditingController(text: widget.user!.age.toString());
+    controllerDate =
+        TextEditingController(text: dateFormat.format(widget.user!.birthday));
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
-        title: Text('Add User'),
+        title: Text('Update User'),
       ),
       body: ListView(
         padding: EdgeInsets.all(16),
@@ -49,16 +64,10 @@ class _UserPageState extends State<UserPage> {
           ),
           ElevatedButton(
               onPressed: () {
-                final user = User(
-                  name: controllerName.text,
-                  age: int.parse(controllerAge.text),
-                  // DateFormat needs intl package
-                  birthday: DateFormat("dd/MM/yyyy").parse(controllerDate.text),
-                );
-                createUser(user);
+                updateUser();
                 Navigator.pop(context);
               },
-              child: Text('Create'))
+              child: Text('Update'))
         ],
       ));
 
@@ -67,20 +76,22 @@ class _UserPageState extends State<UserPage> {
         border: OutlineInputBorder(),
       );
 
-  Future createUser(User user) async {
+  Future updateUser() async {
+    final updateUser = User(
+      id: widget.user!.id,
+      name: controllerName.text,
+      age: int.parse(controllerAge.text),
+      // DateFormat needs intl package
+      birthday: DateFormat("dd/MM/yyyy").parse(controllerDate.text),
+    );
+
+    print('updateUser: ${updateUser.toJson()}');
     // Reference to document
     final docUser = FirebaseFirestore.instance
         .collection("users")
-        .doc(); // Generate an automatic id
-    user.id = docUser.id;
-    final json = user.toJson();
+        .doc(updateUser.id); // Selects the user ID for update
 
-    // Create document and write data to Firebase
-    await docUser.set(json);
-
-    /*final snackBar = SnackBar(
-      content: Text('User ${user.name} created...'),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);*/
+    final json = updateUser.toJson();
+    docUser.update(json);
   }
 }

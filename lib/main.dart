@@ -1,8 +1,10 @@
+// https://www.youtube.com/watch?v=ErP_xomHKTw
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'user_page.dart';
+import 'update_user_page.dart';
 import 'user.dart';
 
 Future main() async {
@@ -22,29 +24,40 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> {
   final controller = TextEditingController();
+  late List<User> _userData;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _userData = readUsers();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
+        title: Text('CRUD Test'),
+        /*TextField(
           controller: controller,
-        ),
+        ),*/
         actions: [
           IconButton(
               onPressed: () {
-                final name = controller.text;
-                createUser(name: name);
+                setState(() {
+                  _userData = readUsers();
+                });
               },
-              icon: Icon(Icons.add))
+              icon: Icon(Icons.refresh))
         ],
       ),
       // StreamBuilder shows updates to the database online (it increases data consumption)
       // FutureBuilder doesn't show real time changes, just a snapshot
-      body: //StreamBuilder(
-          FutureBuilder(
-        //stream: readUsers(), // Used with StreamBuilder
-        future: readUsers().first, // Used with FutureBuilder
+      body: StreamBuilder(
+        //FutureBuilder(
+        // This is FutureBuilder for all users
+        stream: readUsersStream(), // Used with StreamBuilder
+        //future: _userData, // Used with FutureBuilder
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Text('Something went wrong! ${snapshot.error}');
@@ -58,6 +71,22 @@ class _MainAppState extends State<MainApp> {
           }
         },
       ),
+      /*FutureBuilder<User?>(
+        // This is FutureBuilder for one user
+        future: readUser(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Text('Something went wrong! ${snapshot.error}');
+          } else if (snapshot.hasData) {
+            final user = snapshot.data;
+            return user == null
+                ? Center(child: Text('No User'))
+                : buildUser(user);
+          } else {
+            return Center(child: CircularProgressIndicator());
+          }
+        },
+      ),*/
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () {
@@ -71,16 +100,69 @@ class _MainAppState extends State<MainApp> {
   }
 
   Widget buildUser(User user) => ListTile(
-        leading: CircleAvatar(child: Text('${user.age}')),
-        title: Text(user.name),
+        leading: IconButton(
+            onPressed: () {
+              // Update User
+              print('Teste: ${user.toJson()} ${user.id}');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UpdateUserPage(
+                    user: user,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.edit)),
+        title: Text('${user.name} - Age: ${user.age}'),
         subtitle: Text(user.birthday.toIso8601String()),
+        trailing: IconButton(
+          onPressed: () {
+            _deleteUser(user.id);
+          },
+          icon: const Icon(Icons.delete),
+        ),
       );
 
-  Stream<List<User>> readUsers() => FirebaseFirestore.instance
+  void _deleteUser(final userID) {
+    print('userID: $userID');
+    final docUser = FirebaseFirestore.instance.collection('users').doc(userID);
+    docUser.delete();
+    setState(() {
+      _userData = readUsers();
+    });
+  }
+
+  Future<User?> readUser(final userID) async {
+    // Get single document by ID
+    final docUser = FirebaseFirestore.instance.collection('users').doc(userID);
+    final snapshot = await docUser.get();
+    if (snapshot.exists) {
+      return User.fromJson(snapshot.data()!);
+    }
+  }
+
+  // Read all users for use with FutureBuilder or StreamBuilder
+  Stream<List<User>> readUsersStream() => FirebaseFirestore.instance
       .collection('users')
       .snapshots()
       .map((snapshot) =>
           snapshot.docs.map((doc) => User.fromJson(doc.data())).toList());
+
+  List<User> readUsers() {
+    List<User> userList = [];
+
+    FirebaseFirestore.instance.collection("cities").get().then(
+      (querySnapshot) {
+        print("Successfully completed");
+        for (var docSnapshot in querySnapshot.docs) {
+          print('${docSnapshot.id} => ${docSnapshot.data()}');
+        }
+      },
+      onError: (e) => print("Error completing: $e"),
+    );
+    return userList;
+  }
 
   Future createUser({required String name}) async {
     print("createUser: $name");
@@ -103,5 +185,6 @@ class _MainAppState extends State<MainApp> {
 
     // Create document and write data to Firebase
     await docUser.set(json);
+    //setState(() {});
   }
 }
