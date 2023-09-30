@@ -24,13 +24,13 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> {
   final controller = TextEditingController();
-  late List<User> _userData;
+  late Future<List<User>> _userData;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _userData = readUsers();
+    _userData = readUsersStream().first;
   }
 
   @override
@@ -45,7 +45,7 @@ class _MainAppState extends State<MainApp> {
           IconButton(
               onPressed: () {
                 setState(() {
-                  _userData = readUsers();
+                  _userData = readUsersStream().first;
                 });
               },
               icon: Icon(Icons.refresh))
@@ -129,7 +129,7 @@ class _MainAppState extends State<MainApp> {
     final docUser = FirebaseFirestore.instance.collection('users').doc(userID);
     docUser.delete();
     setState(() {
-      _userData = readUsers();
+      _userData = readUsersStream().first;
     });
   }
 
@@ -149,10 +149,10 @@ class _MainAppState extends State<MainApp> {
       .map((snapshot) =>
           snapshot.docs.map((doc) => User.fromJson(doc.data())).toList());
 
-  List<User> readUsers() {
-    List<User> userList = [];
+  /*Future<List<User>> readUsers() {
+    Future<List<User>> userList;
 
-    FirebaseFirestore.instance.collection("cities").get().then(
+    FirebaseFirestore.instance.collection("users").get().then(
       (querySnapshot) {
         print("Successfully completed");
         for (var docSnapshot in querySnapshot.docs) {
@@ -161,8 +161,10 @@ class _MainAppState extends State<MainApp> {
       },
       onError: (e) => print("Error completing: $e"),
     );
+    final userTest = User(name: 'Gustavo', age: 50, birthday: DateTime(1973));
+    userList.
     return userList;
-  }
+  }*/
 
   Future createUser({required String name}) async {
     print("createUser: $name");
