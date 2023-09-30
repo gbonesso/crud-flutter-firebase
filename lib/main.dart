@@ -53,11 +53,11 @@ class _MainAppState extends State<MainApp> {
       ),
       // StreamBuilder shows updates to the database online (it increases data consumption)
       // FutureBuilder doesn't show real time changes, just a snapshot
-      body: StreamBuilder(
-        //FutureBuilder(
+      body: //StreamBuilder(
+          FutureBuilder(
         // This is FutureBuilder for all users
-        stream: readUsersStream(), // Used with StreamBuilder
-        //future: _userData, // Used with FutureBuilder
+        //stream: readUsersStream(), // Used with StreamBuilder
+        future: _userData, // Used with FutureBuilder
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Text('Something went wrong! ${snapshot.error}');
